@@ -9,18 +9,38 @@ section .text
     global _start
 
 _start:
-    mov rbx, [rsp]        ; argc
+    mov rbx, [rsp]
     cmp rbx, 2
-    jl exit
+    jl read_stdin 
 
-    lea r12, [rsp+16]     ; &argv[1]
+    lea r12, [rsp+16]
+    jmp next_file
+
+read_stdin: 
+  mov r13, 0 
+
+stdin_loop: 
+  mov rax, 0 
+  mov rdi, r13 
+  mov rsi, buffer 
+  mov rdx, 4096 
+  syscall 
+
+  test rax, rax
+  jle exit 
+
+  mov rdx, rax 
+  mov rax, 1 
+  mov rdi, 1 
+  mov rsi, buffer 
+  syscall 
+  jmp stdin_loop 
 
 next_file:
-    mov rsi, [r12]        ; current argv pointer
+    mov rsi, [r12]
     test rsi, rsi
-    jz exit               ; stop at NULL
+    jz exit
 
-    ; openat(AT_FDCWD, filename, O_RDONLY, 0)
     mov rax, 257
     mov rdi, -100
     mov rdx, 0
@@ -30,10 +50,10 @@ next_file:
     test rax, rax
     js open_error
 
-    mov r13, rax          ; fd
+    mov r13, rax
 
 read_loop:
-    mov rax, 0            ; read
+    mov rax, 0
     mov rdi, r13
     mov rsi, buffer
     mov rdx, 4096
@@ -43,7 +63,7 @@ read_loop:
     jle close_file
 
     mov rdx, rax
-    mov rax, 1            ; write
+    mov rax, 1
     mov rdi, 1
     mov rsi, buffer
     syscall
