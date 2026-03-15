@@ -2,6 +2,9 @@ section .data
     err_open db "Error opening file", 10
     err_len  equ $ - err_open
 
+    err_read db "Error reading file", 10 
+    err_read_len equ $ - err_read 
+
 section .bss
     buffer   resb 4096
 
@@ -10,14 +13,14 @@ section .text
 
 _start:
     mov rbx, [rsp]
-    cmp rbx, 2
-    jl read_stdin 
+    cmp rbx, 1 
+    jle read_stdin 
 
     lea r12, [rsp+16]
     jmp next_file
 
 read_stdin: 
-  mov r13, 0 
+  xor r13, r13  
 
 stdin_loop: 
   mov rax, 0 
@@ -27,7 +30,8 @@ stdin_loop:
   syscall 
 
   test rax, rax
-  jle exit 
+  js read_error 
+  jz exit 
 
   mov rdx, rax 
   mov rax, 1 
@@ -60,7 +64,9 @@ read_loop:
     syscall
 
     test rax, rax
-    jle close_file
+    js read_error 
+    jz close_file
+     
 
     mov rdx, rax
     mov rax, 1
@@ -76,6 +82,14 @@ close_file:
 
     add r12, 8
     jmp next_file
+
+read_error: 
+  mov rax, 1 
+  mov rdi, 2  
+  mov rsi, err_read 
+  mov rdx, err_read_len 
+  syscall 
+  jmp exit  
 
 open_error:
     mov rax, 1
