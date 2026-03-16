@@ -38,7 +38,7 @@ stdin_loop:
   mov rdi, 1 
   mov rsi, buffer 
   syscall 
-  jmp stdin_loop 
+jmp stdin_loop 
 
 next_file:
     mov rsi, [r12]
